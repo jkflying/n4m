@@ -1,0 +1,9 @@
+build/
+external/install/
+external/venv/
+models/*.param
+models/*.bin
+test/test_data/reference/*.npy
+test/test_data/reference/*.bin
+.cache/
+compile_commands.json

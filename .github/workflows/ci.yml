@@ -1,0 +1,19 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: master
+  pull_request:
+    branches: '**'
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+    - name: build and test
+      run: tools/ci_local.sh
