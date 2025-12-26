@@ -2,9 +2,13 @@ find_package(GTest REQUIRED)
 
 add_executable(nm_tests
     gtest_main.cpp
+    test_types.cpp
+    test_postprocess.cpp
     test_xfeat.cpp
     test_lightglue.cpp
 )
+
+target_include_directories(nm_tests PRIVATE ${CMAKE_SOURCE_DIR}/src/xfeat)
 
 target_link_libraries(nm_tests PRIVATE nm_xfeat nm_lightglue GTest::gtest opencv_imgcodecs)
 
