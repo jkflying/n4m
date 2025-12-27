@@ -2,9 +2,12 @@
 
 #include "xfeat_postprocess.hpp"
 
+#include "../ort_env.hpp"
+
 #include <cmath>
 
-#include <net.h>
+#include <opencv2/imgproc.hpp>
+
 #include <spdlog/spdlog.h>
 
 namespace nnmatch
@@ -12,34 +15,23 @@ namespace nnmatch
 
 static constexpr float DETECTION_THRESHOLD = 0.05f;
 static constexpr int NMS_KERNEL_SIZE = 5;
+static constexpr int STRIDE = 8;
+static constexpr int PAD_MULTIPLE = 32;
 
 struct XFeat::Impl
 {
     XFeatConfig config;
-    ncnn::Net net;
+    Ort::Env env{detail::create_ort_env("xfeat")};
+    Ort::Session session{nullptr};
 
     explicit Impl(const XFeatConfig &cfg) : config(cfg)
     {
-#ifdef NM_VULKAN_ENABLED
-        if (config.use_vulkan)
-        {
-            net.opt.use_vulkan_compute = true;
-            spdlog::info("XFeat: Vulkan enabled on device {}", config.vulkan_device);
-        }
-#endif
-        int ret = net.load_param(config.param_path.c_str());
-        if (ret != 0)
-        {
-            spdlog::error("XFeat: failed to load param from {}", config.param_path);
-            throw std::runtime_error("Failed to load XFeat param file");
-        }
-        ret = net.load_model(config.bin_path.c_str());
-        if (ret != 0)
-        {
-            spdlog::error("XFeat: failed to load model from {}", config.bin_path);
-            throw std::runtime_error("Failed to load XFeat model file");
-        }
-        spdlog::info("XFeat: loaded model ({} max keypoints)", config.max_keypoints);
+        Ort::SessionOptions opts;
+        opts.SetIntraOpNumThreads(1);
+        opts.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
+
+        session = detail::create_ort_session(env, config.model_path.c_str(), opts);
+        spdlog::info("XFeat: loaded model from {} ({} max keypoints)", config.model_path, config.max_keypoints);
     }
 };
 
@@ -54,49 +46,63 @@ FeatureResult XFeat::extract(const cv::Mat &image) const
 {
     FeatureResult result;
 
-    // Pad to nearest multiple of 32
-    const int padded_h = (image.rows / 32) * 32;
-    const int padded_w = (image.cols / 32) * 32;
+    // Pad to nearest multiple of PAD_MULTIPLE
+    const int padded_h = (image.rows / PAD_MULTIPLE) * PAD_MULTIPLE;
+    const int padded_w = (image.cols / PAD_MULTIPLE) * PAD_MULTIPLE;
     const float rh = static_cast<float>(image.rows) / padded_h;
     const float rw = static_cast<float>(image.cols) / padded_w;
 
-    // Preprocess: BGR->RGB, resize to padded dimensions, normalize to [0,1]
-    ncnn::Mat in =
-        ncnn::Mat::from_pixels_resize(image.data, ncnn::Mat::PIXEL_BGR2RGB, image.cols, image.rows, padded_w, padded_h);
+    // Preprocess: resize, BGR->RGB, normalize to [0,1]
+    cv::Mat resized;
+    cv::resize(image, resized, cv::Size(padded_w, padded_h));
+    cv::Mat rgb;
+    cv::cvtColor(resized, rgb, cv::COLOR_BGR2RGB);
+    rgb.convertTo(rgb, CV_32F, 1.0f / 255.0f);
 
-    const float norm_vals[3] = {1.0f / 255.0f, 1.0f / 255.0f, 1.0f / 255.0f};
-    in.substract_mean_normalize(nullptr, norm_vals);
+    // HWC -> NCHW
+    const int num_pixels = padded_h * padded_w;
+    std::vector<float> input_tensor(3 * num_pixels);
+    const float *src = reinterpret_cast<const float *>(rgb.data);
+    for (int i = 0; i < num_pixels; ++i)
+    {
+        input_tensor[0 * num_pixels + i] = src[i * 3 + 0];
+        input_tensor[1 * num_pixels + i] = src[i * 3 + 1];
+        input_tensor[2 * num_pixels + i] = src[i * 3 + 2];
+    }
 
-    // Forward pass - model converts RGB to grayscale internally
-    ncnn::Extractor ex = impl_->net.create_extractor();
-    ex.input("in0", in);
+    // Create ORT input
+    auto memory_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
+    std::array<int64_t, 4> input_shape = {1, 3, padded_h, padded_w};
+    auto input_ort = Ort::Value::CreateTensor<float>(memory_info, input_tensor.data(), input_tensor.size(),
+                                                     input_shape.data(), input_shape.size());
 
-    ncnn::Mat desc_map;    // [64, H/8, W/8] raw descriptors
-    ncnn::Mat kpt_logits;  // [65, H/8, W/8] keypoint logits
-    ncnn::Mat reliability; // [1, H/8, W/8] reliability map
-    ex.extract("out0", desc_map);
-    ex.extract("out1", kpt_logits);
-    ex.extract("out2", reliability);
+    // Run inference
+    const char *input_names[] = {"input"};
+    const char *output_names[] = {"descriptors", "keypoint_logits", "reliability"};
+    auto outputs = impl_->session.Run(Ort::RunOptions{nullptr}, input_names, &input_ort, 1, output_names, 3);
 
-    // Convert keypoint logits to heatmap:
-    // softmax over first 64 channels, then reshape 8x8 blocks to full resolution
-    const int grid_h = kpt_logits.h; // H/8
-    const int grid_w = kpt_logits.w; // W/8
-    const int hm_h = grid_h * 8;
-    const int hm_w = grid_w * 8;
+    // Parse outputs — all are NCHW with batch=1
+    auto desc_shape = outputs[0].GetTensorTypeAndShapeInfo().GetShape();   // [1, 64, H/8, W/8]
+    auto logits_shape = outputs[1].GetTensorTypeAndShapeInfo().GetShape(); // [1, 65, H/8, W/8]
 
-    auto heatmap = detail::logits_to_heatmap(kpt_logits, grid_w, grid_h);
+    const int grid_h = static_cast<int>(logits_shape[2]);
+    const int grid_w = static_cast<int>(logits_shape[3]);
+    const int hm_h = grid_h * STRIDE;
+    const int hm_w = grid_w * STRIDE;
 
-    // NMS on heatmap
+    const float *logits_data = outputs[1].GetTensorData<float>();
+    const float *desc_data = outputs[0].GetTensorData<float>();
+    const float *rel_data = outputs[2].GetTensorData<float>();
+
+    // Postprocessing
+    auto heatmap = detail::logits_to_heatmap(logits_data, grid_w, grid_h);
     auto candidates = detail::nms(heatmap.data(), hm_w, hm_h, NMS_KERNEL_SIZE, DETECTION_THRESHOLD);
 
     // Compute scores: heatmap * reliability
-    const float *rel_data = static_cast<const float *>(reliability.data);
     for (auto &c : candidates)
     {
-        // Map heatmap coords to reliability grid coords
-        int rx = c.x / 8;
-        int ry = c.y / 8;
+        int rx = c.x / STRIDE;
+        int ry = c.y / STRIDE;
         rx = std::min(rx, grid_w - 1);
         ry = std::min(ry, grid_h - 1);
         c.score *= rel_data[ry * grid_w + rx];
@@ -106,12 +112,14 @@ FeatureResult XFeat::extract(const cv::Mat &image) const
     std::sort(candidates.begin(), candidates.end(),
               [](const detail::RawKeypoint &a, const detail::RawKeypoint &b) { return a.score > b.score; });
 
-    // Filter negative scores (invalid keypoints)
     while (!candidates.empty() && candidates.back().score <= 0.0f)
     {
         candidates.pop_back();
     }
 
+    const int desc_channels = static_cast<int>(desc_shape[1]);
+    const int desc_w = static_cast<int>(desc_shape[3]);
+    const int desc_h = static_cast<int>(desc_shape[2]);
     const int n = std::min(static_cast<int>(candidates.size()), impl_->config.max_keypoints);
     result.keypoints.resize(n);
 
@@ -120,16 +128,13 @@ FeatureResult XFeat::extract(const cv::Mat &image) const
         const auto &cand = candidates[i];
         auto &kp = result.keypoints[i];
 
-        // Map heatmap coords back to original image coords
-        // hm_w == padded_w and hm_h == padded_h, so just scale by rw/rh
         kp.x = static_cast<float>(cand.x) * rw;
         kp.y = static_cast<float>(cand.y) * rh;
         kp.score = cand.score;
 
-        // Sample descriptor at corresponding location in descriptor map
-        float desc_fx = static_cast<float>(cand.x) / 8.0f;
-        float desc_fy = static_cast<float>(cand.y) / 8.0f;
-        kp.descriptor = detail::sample_descriptor(desc_map, desc_fx, desc_fy);
+        float desc_fx = static_cast<float>(cand.x) / static_cast<float>(STRIDE);
+        float desc_fy = static_cast<float>(cand.y) / static_cast<float>(STRIDE);
+        kp.descriptor = detail::sample_descriptor(desc_data, desc_channels, desc_w, desc_h, desc_fx, desc_fy);
     }
 
     spdlog::debug("XFeat: extracted {} keypoints from {}x{} image", n, image.cols, image.rows);

@@ -12,11 +12,8 @@ namespace nnmatch
 
 struct XFeatConfig
 {
-    std::string param_path;
-    std::string bin_path;
+    std::string model_path;
     int max_keypoints = 4096;
-    bool use_vulkan = false;
-    int vulkan_device = 0;
 };
 
 class XFeat

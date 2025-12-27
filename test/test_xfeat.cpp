@@ -8,21 +8,15 @@
 #include <cmath>
 #include <fstream>
 
-static std::string models_dir()
+static std::string image_test_data_dir()
 {
-    return std::string(TEST_DATA_DIR) + "/../../models";
-}
-
-static std::string test_data_dir()
-{
-    return TEST_DATA_DIR;
+    return IMAGE_TEST_DATA_DIR;
 }
 
 static bool model_files_exist()
 {
-    std::ifstream p(models_dir() + "/xfeat.param");
-    std::ifstream b(models_dir() + "/xfeat.bin");
-    return p.good() && b.good();
+    std::ifstream f(std::string(MODELS_DIR) + "/xfeat.onnx");
+    return f.good();
 }
 
 class XFeatTest : public ::testing::Test
@@ -35,8 +29,7 @@ class XFeatTest : public ::testing::Test
             GTEST_SKIP() << "XFeat model files not found in models/";
         }
 
-        config.param_path = models_dir() + "/xfeat.param";
-        config.bin_path = models_dir() + "/xfeat.bin";
+        config.model_path = std::string(MODELS_DIR) + "/xfeat.onnx";
         config.max_keypoints = 4096;
     }
 
@@ -88,7 +81,7 @@ TEST_F(XFeatTest, ExtractRealImage)
 {
     nnmatch::XFeat xfeat(config);
 
-    cv::Mat image = cv::imread(test_data_dir() + "/P2530253.JPG");
+    cv::Mat image = cv::imread(image_test_data_dir() + "/P2530253.JPG");
     if (image.empty())
     {
         GTEST_SKIP() << "Test image not found";
@@ -104,8 +97,8 @@ TEST_F(XFeatTest, TwoImagesSameScene)
 {
     nnmatch::XFeat xfeat(config);
 
-    cv::Mat img0 = cv::imread(test_data_dir() + "/P2530253.JPG");
-    cv::Mat img1 = cv::imread(test_data_dir() + "/P2540254.JPG");
+    cv::Mat img0 = cv::imread(image_test_data_dir() + "/P2530253.JPG");
+    cv::Mat img1 = cv::imread(image_test_data_dir() + "/P2540254.JPG");
     if (img0.empty() || img1.empty())
     {
         GTEST_SKIP() << "Test images not found";

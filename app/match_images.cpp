@@ -27,13 +27,11 @@ int main(int argc, char **argv)
     }
 
     nnmatch::XFeatConfig xfeat_cfg;
-    xfeat_cfg.param_path = model_dir + "/xfeat.param";
-    xfeat_cfg.bin_path = model_dir + "/xfeat.bin";
+    xfeat_cfg.model_path = model_dir + "/xfeat.onnx";
     nnmatch::XFeat xfeat(xfeat_cfg);
 
     nnmatch::LightGlueConfig lg_cfg;
-    lg_cfg.param_path = model_dir + "/lightglue.param";
-    lg_cfg.bin_path = model_dir + "/lightglue.bin";
+    lg_cfg.model_path = model_dir + "/lightglue.onnx";
     nnmatch::LightGlue lightglue(lg_cfg);
 
     auto feats1 = xfeat.extract(img1);

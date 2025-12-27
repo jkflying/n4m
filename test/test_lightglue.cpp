@@ -5,21 +5,20 @@
 #include <fstream>
 #include <vector>
 
-static std::string test_data_dir()
+static std::string reference_data_dir()
 {
-    return TEST_DATA_DIR;
+    return REFERENCE_DATA_DIR;
 }
 
 TEST(LightGlue, DISABLED_MatchMatchesReference)
 {
-    auto dir = test_data_dir() + "/reference";
+    auto dir = reference_data_dir();
 
     // Load reference features (would need to deserialize from .npy)
     // For now this test is a placeholder until reference data is generated
 
     nnmatch::LightGlueConfig config;
-    config.param_path = dir + "/../../models/lightglue.param";
-    config.bin_path = dir + "/../../models/lightglue.bin";
+    config.model_path = std::string(MODELS_DIR) + "/lightglue.onnx";
     config.confidence_threshold = 0.0f;
 
     nnmatch::LightGlue lg(config);

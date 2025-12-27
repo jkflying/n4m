@@ -31,8 +31,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(OpenCV REQUIRED)
 include_directories(SYSTEM ${OpenCV_INCLUDE_DIRS})
 
-list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/external/install")
-find_package(ncnn REQUIRED)
+find_package(onnxruntime REQUIRED)
 
 find_package(spdlog REQUIRED)
 

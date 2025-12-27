@@ -11,10 +11,7 @@ namespace nnmatch
 
 struct LightGlueConfig
 {
-    std::string param_path;
-    std::string bin_path;
-    bool use_vulkan = false;
-    int vulkan_device = 0;
+    std::string model_path;
     float confidence_threshold = 0.0f;
 };
 

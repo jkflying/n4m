@@ -91,15 +91,14 @@ TEST(NMS, EdgePeaksIgnored)
 
 TEST(SampleDescriptor, IntegerCoords)
 {
-    // Create a 2x2 descriptor map with 64 channels
-    ncnn::Mat desc_map(2, 2, nnmatch::XFEAT_DESCRIPTOR_DIM);
-    desc_map.fill(0.0f);
+    // Create a 2x2 descriptor map with 64 channels, CHW layout
+    const int w = 2, h = 2;
+    std::vector<float> desc_map(nnmatch::XFEAT_DESCRIPTOR_DIM * h * w, 0.0f);
 
-    // Set channel 0 at position (0,0) to 1.0
-    float *ch0 = desc_map.channel(0);
-    ch0[0] = 3.0f; // (0,0)
+    // Set channel 0 at position (0,0) to 3.0
+    desc_map[0 * h * w + 0] = 3.0f;
 
-    auto desc = sample_descriptor(desc_map, 0.0f, 0.0f);
+    auto desc = sample_descriptor(desc_map.data(), nnmatch::XFEAT_DESCRIPTOR_DIM, w, h, 0.0f, 0.0f);
     // After L2 normalize, channel 0 should be ~1.0 (only nonzero channel)
     EXPECT_NEAR(desc[0], 1.0f, 1e-6f);
     for (int d = 1; d < nnmatch::XFEAT_DESCRIPTOR_DIM; ++d)
@@ -110,15 +109,14 @@ TEST(SampleDescriptor, IntegerCoords)
 
 TEST(SampleDescriptor, BilinearInterpolation)
 {
-    // 2x2 map, channel 0: top-left=4, top-right=0, bottom-left=0, bottom-right=0
-    ncnn::Mat desc_map(2, 2, nnmatch::XFEAT_DESCRIPTOR_DIM);
-    desc_map.fill(0.0f);
+    // 2x2 map, channel 0: top-left=4, rest=0
+    const int w = 2, h = 2;
+    std::vector<float> desc_map(nnmatch::XFEAT_DESCRIPTOR_DIM * h * w, 0.0f);
 
-    float *ch0 = desc_map.channel(0);
-    ch0[0] = 4.0f; // (0,0)
+    desc_map[0 * h * w + 0] = 4.0f; // channel 0, (0,0)
 
     // Sample at (0.5, 0.0) => bilinear: 4*(1-0.5)*(1-0) = 2.0
-    auto desc = sample_descriptor(desc_map, 0.5f, 0.0f);
+    auto desc = sample_descriptor(desc_map.data(), nnmatch::XFEAT_DESCRIPTOR_DIM, w, h, 0.5f, 0.0f);
     // After L2 norm, still 1.0 since only one channel nonzero
     EXPECT_NEAR(desc[0], 1.0f, 1e-6f);
 }
@@ -126,12 +124,11 @@ TEST(SampleDescriptor, BilinearInterpolation)
 TEST(LogitsToHeatmap, SingleCell)
 {
     // 1x1 grid with 65 channels: first channel has high logit, rest are 0
-    ncnn::Mat logits(1, 1, 65);
-    logits.fill(0.0f);
-    float *ch0 = logits.channel(0);
-    ch0[0] = 10.0f; // strong activation for bin 0 (top-left of 8x8)
+    // CHW layout: 65 channels, each 1x1
+    std::vector<float> logits(65 * 1 * 1, 0.0f);
+    logits[0] = 10.0f; // channel 0, strong activation for bin 0
 
-    auto heatmap = logits_to_heatmap(logits, 1, 1);
+    auto heatmap = logits_to_heatmap(logits.data(), 1, 1);
     ASSERT_EQ(heatmap.size(), 64u); // 8x8
 
     // Bin 0 maps to position (0,0) in 8x8 block — should have highest value
@@ -149,10 +146,9 @@ TEST(LogitsToHeatmap, SingleCell)
 TEST(LogitsToHeatmap, UniformLogits)
 {
     // All channels equal → each of 65 channels gets 1/65 probability
-    ncnn::Mat logits(1, 1, 65);
-    logits.fill(0.0f);
+    std::vector<float> logits(65 * 1 * 1, 0.0f);
 
-    auto heatmap = logits_to_heatmap(logits, 1, 1);
+    auto heatmap = logits_to_heatmap(logits.data(), 1, 1);
     for (float v : heatmap)
     {
         EXPECT_NEAR(v, 1.0f / 65.0f, 1e-5f);
@@ -162,15 +158,13 @@ TEST(LogitsToHeatmap, UniformLogits)
 TEST(SampleDescriptor, L2Normalized)
 {
     // Set two channels to nonzero to verify normalization
-    ncnn::Mat desc_map(1, 1, nnmatch::XFEAT_DESCRIPTOR_DIM);
-    desc_map.fill(0.0f);
+    const int w = 1, h = 1;
+    std::vector<float> desc_map(nnmatch::XFEAT_DESCRIPTOR_DIM * h * w, 0.0f);
 
-    float *ch0 = desc_map.channel(0);
-    ch0[0] = 3.0f;
-    float *ch1 = desc_map.channel(1);
-    ch1[0] = 4.0f;
+    desc_map[0] = 3.0f; // channel 0
+    desc_map[1] = 4.0f; // channel 1
 
-    auto desc = sample_descriptor(desc_map, 0.0f, 0.0f);
+    auto desc = sample_descriptor(desc_map.data(), nnmatch::XFEAT_DESCRIPTOR_DIM, w, h, 0.0f, 0.0f);
 
     float norm = 0.0f;
     for (int d = 0; d < nnmatch::XFEAT_DESCRIPTOR_DIM; ++d)

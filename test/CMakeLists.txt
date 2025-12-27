@@ -13,7 +13,9 @@ target_include_directories(nm_tests PRIVATE ${CMAKE_SOURCE_DIR}/src/xfeat)
 target_link_libraries(nm_tests PRIVATE nm_xfeat nm_lightglue GTest::gtest opencv_imgcodecs)
 
 target_compile_definitions(nm_tests PRIVATE
-    TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/test_data")
+    IMAGE_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/image_test_data"
+    REFERENCE_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/reference"
+    MODELS_DIR="${CMAKE_SOURCE_DIR}/models")
 
 add_custom_target(test
                   USES_TERMINAL

@@ -6,8 +6,6 @@
 #include <cmath>
 #include <vector>
 
-#include <net.h>
-
 namespace nnmatch
 {
 namespace detail
@@ -20,23 +18,27 @@ struct RawKeypoint
 };
 
 // Convert keypoint logits [65, grid_h, grid_w] to heatmap [grid_h*8, grid_w*8].
+// logits_data is CHW-contiguous: 65 channels, each grid_h * grid_w floats.
 // Applies softmax over first 64 channels (spatial bins), discards dustbin (channel 64),
 // then reshapes 8x8 blocks to full resolution.
-inline std::vector<float> logits_to_heatmap(const ncnn::Mat &kpt_logits, int grid_w, int grid_h)
+inline std::vector<float> logits_to_heatmap(const float *logits_data, int grid_w, int grid_h)
 {
     const int hm_h = grid_h * 8;
     const int hm_w = grid_w * 8;
+    const int spatial = grid_h * grid_w;
     std::vector<float> heatmap(hm_h * hm_w, 0.0f);
 
     for (int gy = 0; gy < grid_h; ++gy)
     {
         for (int gx = 0; gx < grid_w; ++gx)
         {
+            const int idx = gy * grid_w + gx;
+
             // Softmax over 65 channels at this spatial location
             float max_val = -1e30f;
             for (int c = 0; c < 65; ++c)
             {
-                float v = kpt_logits.channel(c)[gy * grid_w + gx];
+                float v = logits_data[c * spatial + idx];
                 if (v > max_val)
                     max_val = v;
             }
@@ -45,8 +47,7 @@ inline std::vector<float> logits_to_heatmap(const ncnn::Mat &kpt_logits, int gri
             float exps[65];
             for (int c = 0; c < 65; ++c)
             {
-                float v = kpt_logits.channel(c)[gy * grid_w + gx];
-                exps[c] = std::exp(v - max_val);
+                exps[c] = std::exp(logits_data[c * spatial + idx] - max_val);
                 sum_exp += exps[c];
             }
 
@@ -109,18 +110,16 @@ inline std::vector<RawKeypoint> nms(const float *hm_data, int hm_w, int hm_h, in
     return candidates;
 }
 
-// Legacy 3x3 NMS with threshold=0 (for tests)
+// 3x3 NMS with threshold=0 (for tests)
 inline std::vector<RawKeypoint> nms_3x3(const float *hm_data, int hm_w, int hm_h)
 {
     return nms(hm_data, hm_w, hm_h, 3, 0.0f);
 }
 
-// Bilinear sample + L2-normalize a descriptor from a CHW descriptor map at (fx, fy) in map coords
-inline Descriptor sample_descriptor(const ncnn::Mat &desc_map, float fx, float fy)
+// Bilinear sample + L2-normalize a descriptor from a CHW-contiguous descriptor map
+// desc_data layout: channels planes, each h * w floats
+inline Descriptor sample_descriptor(const float *desc_data, int channels, int w, int h, float fx, float fy)
 {
-    const int w = desc_map.w;
-    const int h = desc_map.h;
-
     int x0 = std::max(0, std::min(static_cast<int>(fx), w - 1));
     int y0 = std::max(0, std::min(static_cast<int>(fy), h - 1));
     int x1 = std::min(x0 + 1, w - 1);
@@ -131,16 +130,17 @@ inline Descriptor sample_descriptor(const ncnn::Mat &desc_map, float fx, float f
 
     Descriptor desc;
     float norm_sq = 0.0f;
-    for (int d = 0; d < XFEAT_DESCRIPTOR_DIM; ++d)
+    const int plane = h * w;
+    for (int d = 0; d < channels; ++d)
     {
-        const float *ch = desc_map.channel(d);
+        const float *ch = desc_data + d * plane;
         float val = ch[y0 * w + x0] * (1 - wx) * (1 - wy) + ch[y0 * w + x1] * wx * (1 - wy) +
                     ch[y1 * w + x0] * (1 - wx) * wy + ch[y1 * w + x1] * wx * wy;
         desc[d] = val;
         norm_sq += val * val;
     }
     float inv_norm = 1.0f / (std::sqrt(norm_sq) + 1e-8f);
-    for (int d = 0; d < XFEAT_DESCRIPTOR_DIM; ++d)
+    for (int d = 0; d < channels; ++d)
     {
         desc[d] *= inv_norm;
     }

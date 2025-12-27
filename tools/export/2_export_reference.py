@@ -21,7 +21,7 @@ from modules.xfeat import XFeat
 
 def main():
     root = os.path.join(os.path.dirname(__file__), '..', '..')
-    output_dir = sys.argv[1] if len(sys.argv) > 1 else os.path.join(root, 'test', 'test_data', 'reference')
+    output_dir = sys.argv[1] if len(sys.argv) > 1 else os.path.join(root, 'test', 'reference')
     os.makedirs(output_dir, exist_ok=True)
 
     # Create a deterministic synthetic test image
