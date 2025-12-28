@@ -1,7 +1,6 @@
 #include <iostream>
 
 #include <opencv2/core.hpp>
-#include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 
@@ -10,13 +9,14 @@
 
 int main(int argc, char **argv)
 {
-    if (argc < 3)
+    if (argc < 4)
     {
-        std::cerr << "Usage: " << argv[0] << " <image1> <image2> [model_dir]\n";
+        std::cerr << "Usage: " << argv[0] << " <image1> <image2> <output> [model_dir]\n";
         return 1;
     }
 
-    std::string model_dir = (argc >= 4) ? argv[3] : "models";
+    std::string output_path = argv[3];
+    std::string model_dir = (argc >= 5) ? argv[4] : "models";
 
     cv::Mat img1 = cv::imread(argv[1]);
     cv::Mat img2 = cv::imread(argv[2]);
@@ -48,6 +48,17 @@ int main(int argc, char **argv)
     img1.copyTo(canvas(cv::Rect(0, 0, img1.cols, img1.rows)));
     img2.copyTo(canvas(cv::Rect(img1.cols, 0, img2.cols, img2.rows)));
 
+    // Draw all keypoints as small gray dots
+    for (const auto &kp : feats1.keypoints)
+    {
+        cv::circle(canvas, cv::Point2f(kp.x, kp.y), 2, cv::Scalar(128, 128, 128), -1);
+    }
+    for (const auto &kp : feats2.keypoints)
+    {
+        cv::circle(canvas, cv::Point2f(kp.x + img1.cols, kp.y), 2, cv::Scalar(128, 128, 128), -1);
+    }
+
+    // Draw matches on top
     for (const auto &m : matches)
     {
         const auto &kp1 = feats1.keypoints[m.idx0];
@@ -61,8 +72,8 @@ int main(int argc, char **argv)
         cv::circle(canvas, pt2, 3, cv::Scalar(0, 255, 0), -1);
     }
 
-    cv::imshow("Matches", canvas);
-    cv::waitKey(0);
+    cv::imwrite(output_path, canvas);
+    std::cout << "Saved to " << output_path << "\n";
 
     return 0;
 }

@@ -158,6 +158,9 @@ FeatureResult XFeat::extract(const cv::Mat &image) const
         kp.descriptor = detail::sample_descriptor(desc_data, desc_channels, desc_w, desc_h, desc_fx, desc_fy);
     }
 
+    result.image_width = image.cols;
+    result.image_height = image.rows;
+
     spdlog::debug("XFeat: extracted {} keypoints from {}x{} image", n, image.cols, image.rows);
     return result;
 }

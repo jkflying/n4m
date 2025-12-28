@@ -5,8 +5,10 @@
 
 #include <nnmatch/xfeat.hpp>
 
+#include <chrono>
 #include <cmath>
 #include <fstream>
+#include <iostream>
 
 static std::string image_test_data_dir()
 {
@@ -193,6 +195,34 @@ TEST_F(XFeatTest, SmallImage)
     cv::randu(image, cv::Scalar(0, 0, 0), cv::Scalar(255, 255, 255));
 
     EXPECT_THROW(xfeat.extract(image), std::invalid_argument);
+}
+
+TEST_F(XFeatTest, RealImageDownscaled1600)
+{
+    nnmatch::XFeat xfeat(config);
+
+    cv::Mat image = cv::imread(image_test_data_dir() + "/P2530253.JPG");
+    if (image.empty())
+    {
+        GTEST_SKIP() << "Test image not found";
+    }
+
+    // Downscale to 1600px on the long side (matches opencalibration's feature extraction size)
+    const int max_dim = 1600;
+    double scale = static_cast<double>(max_dim) / std::max(image.rows, image.cols);
+    cv::Mat resized;
+    cv::resize(image, resized, cv::Size(), scale, scale);
+
+    auto t0 = std::chrono::steady_clock::now();
+    auto result = xfeat.extract(resized);
+    auto t1 = std::chrono::steady_clock::now();
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+
+    std::cout << "XFeat extract " << resized.cols << "x" << resized.rows << ": " << ms << " ms, "
+              << result.keypoints.size() << " keypoints" << std::endl;
+
+    validate_result(result, resized);
+    EXPECT_GT(result.keypoints.size(), 500u);
 }
 
 TEST_F(XFeatTest, Deterministic)

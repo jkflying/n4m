@@ -19,6 +19,8 @@ struct Keypoint
 struct FeatureResult
 {
     std::vector<Keypoint> keypoints;
+    int image_width = 0;
+    int image_height = 0;
 };
 
 struct Match
