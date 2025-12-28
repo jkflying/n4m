@@ -126,3 +126,90 @@ TEST_F(XFeatTest, MaxKeypointsRespected)
     auto result = xfeat.extract(image);
     EXPECT_LE(result.keypoints.size(), 100u);
 }
+
+TEST_F(XFeatTest, GrayscaleImage)
+{
+    nnmatch::XFeat xfeat(config);
+
+    cv::Mat image(480, 640, CV_8UC1);
+    cv::randu(image, cv::Scalar(0), cv::Scalar(255));
+    cv::rectangle(image, cv::Point(100, 100), cv::Point(300, 300), cv::Scalar(255), 2);
+
+    auto result = xfeat.extract(image);
+    validate_result(result, image);
+}
+
+TEST_F(XFeatTest, RGBAImage)
+{
+    nnmatch::XFeat xfeat(config);
+
+    cv::Mat image(480, 640, CV_8UC4);
+    cv::randu(image, cv::Scalar(0, 0, 0, 0), cv::Scalar(255, 255, 255, 255));
+
+    auto result = xfeat.extract(image);
+    validate_result(result, image);
+}
+
+TEST_F(XFeatTest, PortraitImage)
+{
+    nnmatch::XFeat xfeat(config);
+
+    cv::Mat image(640, 480, CV_8UC3);
+    cv::randu(image, cv::Scalar(0, 0, 0), cv::Scalar(255, 255, 255));
+    cv::rectangle(image, cv::Point(100, 100), cv::Point(300, 500), cv::Scalar(255, 255, 255), 2);
+
+    auto result = xfeat.extract(image);
+    validate_result(result, image);
+}
+
+TEST_F(XFeatTest, SquareImage)
+{
+    nnmatch::XFeat xfeat(config);
+
+    cv::Mat image(512, 512, CV_8UC3);
+    cv::randu(image, cv::Scalar(0, 0, 0), cv::Scalar(255, 255, 255));
+
+    auto result = xfeat.extract(image);
+    validate_result(result, image);
+}
+
+TEST_F(XFeatTest, NonMultipleOf32)
+{
+    nnmatch::XFeat xfeat(config);
+
+    cv::Mat image(479, 637, CV_8UC3);
+    cv::randu(image, cv::Scalar(0, 0, 0), cv::Scalar(255, 255, 255));
+
+    auto result = xfeat.extract(image);
+    validate_result(result, image);
+}
+
+TEST_F(XFeatTest, SmallImage)
+{
+    nnmatch::XFeat xfeat(config);
+
+    // Image smaller than PAD_MULTIPLE (32) — must not crash
+    cv::Mat image(24, 24, CV_8UC3);
+    cv::randu(image, cv::Scalar(0, 0, 0), cv::Scalar(255, 255, 255));
+
+    EXPECT_THROW(xfeat.extract(image), std::invalid_argument);
+}
+
+TEST_F(XFeatTest, Deterministic)
+{
+    nnmatch::XFeat xfeat(config);
+
+    cv::Mat image(480, 640, CV_8UC3);
+    cv::randu(image, cv::Scalar(0, 0, 0), cv::Scalar(255, 255, 255));
+
+    auto result1 = xfeat.extract(image);
+    auto result2 = xfeat.extract(image);
+
+    ASSERT_EQ(result1.keypoints.size(), result2.keypoints.size());
+    for (size_t i = 0; i < result1.keypoints.size(); ++i)
+    {
+        EXPECT_FLOAT_EQ(result1.keypoints[i].x, result2.keypoints[i].x);
+        EXPECT_FLOAT_EQ(result1.keypoints[i].y, result2.keypoints[i].y);
+        EXPECT_FLOAT_EQ(result1.keypoints[i].score, result2.keypoints[i].score);
+    }
+}

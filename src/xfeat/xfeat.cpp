@@ -5,6 +5,7 @@
 #include "../ort_env.hpp"
 
 #include <cmath>
+#include <stdexcept>
 
 #include <opencv2/imgproc.hpp>
 
@@ -46,18 +47,38 @@ FeatureResult XFeat::extract(const cv::Mat &image) const
 {
     FeatureResult result;
 
+    if (image.rows < PAD_MULTIPLE || image.cols < PAD_MULTIPLE)
+    {
+        throw std::invalid_argument("Image too small: minimum size is " + std::to_string(PAD_MULTIPLE) + "x" +
+                                    std::to_string(PAD_MULTIPLE) + ", got " + std::to_string(image.cols) + "x" +
+                                    std::to_string(image.rows));
+    }
+
     // Pad to nearest multiple of PAD_MULTIPLE
     const int padded_h = (image.rows / PAD_MULTIPLE) * PAD_MULTIPLE;
     const int padded_w = (image.cols / PAD_MULTIPLE) * PAD_MULTIPLE;
     const float rh = static_cast<float>(image.rows) / padded_h;
     const float rw = static_cast<float>(image.cols) / padded_w;
 
-    // Preprocess: resize, BGR->RGB, normalize to [0,1]
+    // Preprocess: convert to RGB, resize, normalize to [0,1]
+    cv::Mat rgb_input;
+    switch (image.channels())
+    {
+    case 1:
+        cv::cvtColor(image, rgb_input, cv::COLOR_GRAY2RGB);
+        break;
+    case 4:
+        cv::cvtColor(image, rgb_input, cv::COLOR_BGRA2RGB);
+        break;
+    default:
+        cv::cvtColor(image, rgb_input, cv::COLOR_BGR2RGB);
+        break;
+    }
+
     cv::Mat resized;
-    cv::resize(image, resized, cv::Size(padded_w, padded_h));
+    cv::resize(rgb_input, resized, cv::Size(padded_w, padded_h));
     cv::Mat rgb;
-    cv::cvtColor(resized, rgb, cv::COLOR_BGR2RGB);
-    rgb.convertTo(rgb, CV_32F, 1.0f / 255.0f);
+    resized.convertTo(rgb, CV_32F, 1.0f / 255.0f);
 
     // HWC -> NCHW
     const int num_pixels = padded_h * padded_w;
