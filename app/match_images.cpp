@@ -28,6 +28,7 @@ int main(int argc, char **argv)
 
     nnmatch::XFeatConfig xfeat_cfg;
     xfeat_cfg.model_path = model_dir + "/xfeat.onnx";
+    xfeat_cfg.distribute = true;
     nnmatch::XFeat xfeat(xfeat_cfg);
 
     nnmatch::LightGlueConfig lg_cfg;

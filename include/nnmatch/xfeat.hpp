@@ -14,6 +14,7 @@ struct XFeatConfig
 {
     std::string model_path;
     int max_keypoints = 4096;
+    bool distribute = false;
 };
 
 class XFeat

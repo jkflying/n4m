@@ -18,6 +18,35 @@ static constexpr float DETECTION_THRESHOLD = 0.05f;
 static constexpr int NMS_KERNEL_SIZE = 5;
 static constexpr int STRIDE = 8;
 static constexpr int PAD_MULTIPLE = 32;
+static constexpr int DISTRIBUTE_CELL_SIZE = 64;
+
+/// Keep only the best keypoint per grid cell.
+static std::vector<detail::RawKeypoint> distribute_keypoints(const std::vector<detail::RawKeypoint> &candidates,
+                                                             int width, int height)
+{
+    const int cols = std::max(1, (width + DISTRIBUTE_CELL_SIZE - 1) / DISTRIBUTE_CELL_SIZE);
+    const int rows = std::max(1, (height + DISTRIBUTE_CELL_SIZE - 1) / DISTRIBUTE_CELL_SIZE);
+
+    std::vector<detail::RawKeypoint> best(cols * rows, {0, 0, -1.0f});
+
+    for (const auto &c : candidates)
+    {
+        int cx = std::min(c.x * cols / width, cols - 1);
+        int cy = std::min(c.y * rows / height, rows - 1);
+        auto &b = best[cy * cols + cx];
+        if (c.score > b.score)
+            b = c;
+    }
+
+    std::vector<detail::RawKeypoint> result;
+    result.reserve(cols * rows);
+    for (const auto &b : best)
+    {
+        if (b.score > 0.0f)
+            result.push_back(b);
+    }
+    return result;
+}
 
 struct XFeat::Impl
 {
@@ -129,24 +158,34 @@ FeatureResult XFeat::extract(const cv::Mat &image) const
         c.score *= rel_data[ry * grid_w + rx];
     }
 
-    // Sort by score descending, take top-k
-    std::sort(candidates.begin(), candidates.end(),
-              [](const detail::RawKeypoint &a, const detail::RawKeypoint &b) { return a.score > b.score; });
+    // Remove non-positive scores
+    candidates.erase(std::remove_if(candidates.begin(), candidates.end(),
+                                    [](const detail::RawKeypoint &c) { return c.score <= 0.0f; }),
+                     candidates.end());
 
-    while (!candidates.empty() && candidates.back().score <= 0.0f)
+    // Select keypoints: either one-per-cell or top-k by score
+    std::vector<detail::RawKeypoint> selected;
+    if (impl_->config.distribute)
     {
-        candidates.pop_back();
+        selected = distribute_keypoints(candidates, hm_w, hm_h);
+    }
+    else
+    {
+        std::sort(candidates.begin(), candidates.end(),
+                  [](const detail::RawKeypoint &a, const detail::RawKeypoint &b) { return a.score > b.score; });
+        int k = std::min(static_cast<int>(candidates.size()), impl_->config.max_keypoints);
+        selected.assign(candidates.begin(), candidates.begin() + k);
     }
 
     const int desc_channels = static_cast<int>(desc_shape[1]);
     const int desc_w = static_cast<int>(desc_shape[3]);
     const int desc_h = static_cast<int>(desc_shape[2]);
-    const int n = std::min(static_cast<int>(candidates.size()), impl_->config.max_keypoints);
+    const int n = static_cast<int>(selected.size());
     result.keypoints.resize(n);
 
     for (int i = 0; i < n; ++i)
     {
-        const auto &cand = candidates[i];
+        const auto &cand = selected[i];
         auto &kp = result.keypoints[i];
 
         kp.x = static_cast<float>(cand.x) * rw;
