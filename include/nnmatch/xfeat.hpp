@@ -14,7 +14,10 @@ struct XFeatConfig
 {
     std::string model_path;
     int max_keypoints = 4096;
-    bool distribute = false;
+    /// Grid cell size in pixels for spatial distribution (0 = disabled, pure top-k by score).
+    /// Best keypoint per cell is kept, then capped to max_keypoints.
+    /// 16 matches opencalibration's NMS density (8px radius, ~70% fill → ~same count at 1600px).
+    int cell_size = 0;
 };
 
 class XFeat

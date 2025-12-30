@@ -83,3 +83,50 @@ endif()
 if (NM_TESTING)
     add_subdirectory(test)
 endif()
+
+# ======= INSTALL =======================
+include(GNUInstallDirs)
+
+install(TARGETS nm_xfeat nm_lightglue
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+install(DIRECTORY include/nnmatch
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+if (NM_APP)
+    install(TARGETS match_images
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
+
+set(_required_models
+    models/xfeat.onnx
+    models/lightglue.onnx)
+
+foreach(_model ${_required_models})
+    if(NOT EXISTS "${CMAKE_SOURCE_DIR}/${_model}")
+        message(FATAL_ERROR "Required model not found: ${_model}\n"
+            "Run the export scripts first:\n"
+            "  python tools/export/1_export_xfeat_onnx.py\n"
+            "  python tools/export/4_export_lightglue_onnx.py")
+    endif()
+endforeach()
+
+install(FILES
+    models/xfeat.onnx
+    models/lightglue.onnx
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/nnmatch/models)
+
+# External data files (large models split by ONNX exporter)
+install(FILES
+    models/xfeat.onnx.data
+    models/lightglue.onnx.data
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/nnmatch/models
+    OPTIONAL)
+
+# ======= CPACK ========================
+set(CPACK_PACKAGE_NAME "nnmatch")
+set(CPACK_PACKAGE_VERSION "0.1.0")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "XFeat + LightGlue feature matching")
+set(CPACK_GENERATOR "TGZ")
+include(CPack)

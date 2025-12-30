@@ -53,4 +53,12 @@ group "Coverage Test"
 ninja -C build_coverage test_coverage_html
 endgroup
 
+group "Release Build + Package"
+mkdir -p build_release
+cmake -S . -B build_release -G Ninja -DCMAKE_BUILD_TYPE=Release -DNM_TESTING=OFF
+ninja -C build_release
+ninja -C build_release package
+echo "Package: $(ls build_release/nnmatch-*.tar.gz)"
+endgroup
+
 echo "All CI steps passed."

@@ -221,8 +221,7 @@ TEST_F(LightGlueTest, ConfidenceThreshold)
     nnmatch::LightGlue lg_loose(lg_config);
     auto matches_loose = lg_loose.match(feats0, feats1);
 
-    EXPECT_LE(matches_strict.size(), matches_loose.size())
-        << "Higher threshold should produce fewer or equal matches";
+    EXPECT_LE(matches_strict.size(), matches_loose.size()) << "Higher threshold should produce fewer or equal matches";
 }
 
 TEST_F(LightGlueWithXFeatTest, FeatureResultHasImageSize)

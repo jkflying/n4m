@@ -18,21 +18,19 @@ static constexpr float DETECTION_THRESHOLD = 0.05f;
 static constexpr int NMS_KERNEL_SIZE = 5;
 static constexpr int STRIDE = 8;
 static constexpr int PAD_MULTIPLE = 32;
-static constexpr int DISTRIBUTE_CELL_SIZE = 64;
-
 /// Keep only the best keypoint per grid cell.
-static std::vector<detail::RawKeypoint> distribute_keypoints(const std::vector<detail::RawKeypoint> &candidates,
-                                                             int width, int height)
+static std::vector<detail::RawKeypoint> best_per_cell(const std::vector<detail::RawKeypoint> &candidates, int width,
+                                                      int height, int cell_size)
 {
-    const int cols = std::max(1, (width + DISTRIBUTE_CELL_SIZE - 1) / DISTRIBUTE_CELL_SIZE);
-    const int rows = std::max(1, (height + DISTRIBUTE_CELL_SIZE - 1) / DISTRIBUTE_CELL_SIZE);
+    const int cols = std::max(1, (width + cell_size - 1) / cell_size);
+    const int rows = std::max(1, (height + cell_size - 1) / cell_size);
 
     std::vector<detail::RawKeypoint> best(cols * rows, {0, 0, -1.0f});
 
     for (const auto &c : candidates)
     {
-        int cx = std::min(c.x * cols / width, cols - 1);
-        int cy = std::min(c.y * rows / height, rows - 1);
+        int cx = std::min(c.x / cell_size, cols - 1);
+        int cy = std::min(c.y / cell_size, rows - 1);
         auto &b = best[cy * cols + cx];
         if (c.score > b.score)
             b = c;
@@ -163,11 +161,17 @@ FeatureResult XFeat::extract(const cv::Mat &image) const
                                     [](const detail::RawKeypoint &c) { return c.score <= 0.0f; }),
                      candidates.end());
 
-    // Select keypoints: either one-per-cell or top-k by score
+    // Select keypoints: best-per-cell or top-k by score
     std::vector<detail::RawKeypoint> selected;
-    if (impl_->config.distribute)
+    if (impl_->config.cell_size > 0)
     {
-        selected = distribute_keypoints(candidates, hm_w, hm_h);
+        selected = best_per_cell(candidates, hm_w, hm_h, impl_->config.cell_size);
+        if (static_cast<int>(selected.size()) > impl_->config.max_keypoints)
+        {
+            std::sort(selected.begin(), selected.end(),
+                      [](const detail::RawKeypoint &a, const detail::RawKeypoint &b) { return a.score > b.score; });
+            selected.resize(impl_->config.max_keypoints);
+        }
     }
     else
     {
