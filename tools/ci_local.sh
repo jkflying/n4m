@@ -55,10 +55,10 @@ endgroup
 
 group "Release Build + Package"
 mkdir -p build_release
-cmake -S . -B build_release -G Ninja -DCMAKE_BUILD_TYPE=Release -DNM_TESTING=OFF
+cmake -S . -B build_release -G Ninja -DCMAKE_BUILD_TYPE=Release -DN4M_TESTING=OFF
 ninja -C build_release
 ninja -C build_release package
-echo "Package: $(ls build_release/nnmatch-*.tar.gz)"
+echo "Package: $(ls build_release/n4m-*.tar.gz)"
 endgroup
 
 echo "All CI steps passed."

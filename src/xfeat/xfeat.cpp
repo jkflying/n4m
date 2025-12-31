@@ -1,4 +1,4 @@
-#include <nnmatch/xfeat.hpp>
+#include <n4m/xfeat.hpp>
 
 #include "xfeat_postprocess.hpp"
 
@@ -11,7 +11,7 @@
 
 #include <spdlog/spdlog.h>
 
-namespace nnmatch
+namespace n4m
 {
 
 static constexpr float DETECTION_THRESHOLD = 0.05f;
@@ -208,4 +208,4 @@ FeatureResult XFeat::extract(const cv::Mat &image) const
     return result;
 }
 
-} // namespace nnmatch
+} // namespace n4m

@@ -5,9 +5,9 @@
 
 #include <opencv2/core.hpp>
 
-#include <nnmatch/types.hpp>
+#include <n4m/types.hpp>
 
-namespace nnmatch
+namespace n4m
 {
 
 struct XFeatConfig
@@ -38,4 +38,4 @@ class XFeat
     std::unique_ptr<Impl> impl_;
 };
 
-} // namespace nnmatch
+} // namespace n4m

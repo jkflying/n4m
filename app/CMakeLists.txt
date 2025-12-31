@@ -1,3 +1,3 @@
 add_executable(match_images match_images.cpp)
 
-target_link_libraries(match_images PRIVATE nm_xfeat nm_lightglue opencv_core opencv_imgcodecs opencv_imgproc opencv_features2d)
+target_link_libraries(match_images PRIVATE n4m_xfeat n4m_lightglue opencv_core opencv_imgcodecs opencv_imgproc opencv_features2d)

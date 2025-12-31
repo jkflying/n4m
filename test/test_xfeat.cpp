@@ -3,7 +3,7 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 
-#include <nnmatch/xfeat.hpp>
+#include <n4m/xfeat.hpp>
 
 #include <chrono>
 #include <cmath>
@@ -35,7 +35,7 @@ class XFeatTest : public ::testing::Test
         config.max_keypoints = 4096;
     }
 
-    void validate_result(const nnmatch::FeatureResult &result, const cv::Mat &image)
+    void validate_result(const n4m::FeatureResult &result, const cv::Mat &image)
     {
         EXPECT_GT(result.keypoints.size(), 0u);
 
@@ -62,12 +62,12 @@ class XFeatTest : public ::testing::Test
         }
     }
 
-    nnmatch::XFeatConfig config;
+    n4m::XFeatConfig config;
 };
 
 TEST_F(XFeatTest, ExtractSyntheticImage)
 {
-    nnmatch::XFeat xfeat(config);
+    n4m::XFeat xfeat(config);
 
     cv::Mat image(480, 640, CV_8UC3);
     cv::randu(image, cv::Scalar(0, 0, 0), cv::Scalar(255, 255, 255));
@@ -81,7 +81,7 @@ TEST_F(XFeatTest, ExtractSyntheticImage)
 
 TEST_F(XFeatTest, ExtractRealImage)
 {
-    nnmatch::XFeat xfeat(config);
+    n4m::XFeat xfeat(config);
 
     cv::Mat image = cv::imread(image_test_data_dir() + "/P2530253.JPG");
     if (image.empty())
@@ -97,7 +97,7 @@ TEST_F(XFeatTest, ExtractRealImage)
 
 TEST_F(XFeatTest, TwoImagesSameScene)
 {
-    nnmatch::XFeat xfeat(config);
+    n4m::XFeat xfeat(config);
 
     cv::Mat img0 = cv::imread(image_test_data_dir() + "/P2530253.JPG");
     cv::Mat img1 = cv::imread(image_test_data_dir() + "/P2540254.JPG");
@@ -120,7 +120,7 @@ TEST_F(XFeatTest, TwoImagesSameScene)
 TEST_F(XFeatTest, MaxKeypointsRespected)
 {
     config.max_keypoints = 100;
-    nnmatch::XFeat xfeat(config);
+    n4m::XFeat xfeat(config);
 
     cv::Mat image(480, 640, CV_8UC3);
     cv::randu(image, cv::Scalar(0, 0, 0), cv::Scalar(255, 255, 255));
@@ -131,7 +131,7 @@ TEST_F(XFeatTest, MaxKeypointsRespected)
 
 TEST_F(XFeatTest, GrayscaleImage)
 {
-    nnmatch::XFeat xfeat(config);
+    n4m::XFeat xfeat(config);
 
     cv::Mat image(480, 640, CV_8UC1);
     cv::randu(image, cv::Scalar(0), cv::Scalar(255));
@@ -143,7 +143,7 @@ TEST_F(XFeatTest, GrayscaleImage)
 
 TEST_F(XFeatTest, RGBAImage)
 {
-    nnmatch::XFeat xfeat(config);
+    n4m::XFeat xfeat(config);
 
     cv::Mat image(480, 640, CV_8UC4);
     cv::randu(image, cv::Scalar(0, 0, 0, 0), cv::Scalar(255, 255, 255, 255));
@@ -154,7 +154,7 @@ TEST_F(XFeatTest, RGBAImage)
 
 TEST_F(XFeatTest, PortraitImage)
 {
-    nnmatch::XFeat xfeat(config);
+    n4m::XFeat xfeat(config);
 
     cv::Mat image(640, 480, CV_8UC3);
     cv::randu(image, cv::Scalar(0, 0, 0), cv::Scalar(255, 255, 255));
@@ -166,7 +166,7 @@ TEST_F(XFeatTest, PortraitImage)
 
 TEST_F(XFeatTest, SquareImage)
 {
-    nnmatch::XFeat xfeat(config);
+    n4m::XFeat xfeat(config);
 
     cv::Mat image(512, 512, CV_8UC3);
     cv::randu(image, cv::Scalar(0, 0, 0), cv::Scalar(255, 255, 255));
@@ -177,7 +177,7 @@ TEST_F(XFeatTest, SquareImage)
 
 TEST_F(XFeatTest, NonMultipleOf32)
 {
-    nnmatch::XFeat xfeat(config);
+    n4m::XFeat xfeat(config);
 
     cv::Mat image(479, 637, CV_8UC3);
     cv::randu(image, cv::Scalar(0, 0, 0), cv::Scalar(255, 255, 255));
@@ -188,7 +188,7 @@ TEST_F(XFeatTest, NonMultipleOf32)
 
 TEST_F(XFeatTest, SmallImage)
 {
-    nnmatch::XFeat xfeat(config);
+    n4m::XFeat xfeat(config);
 
     // Image smaller than PAD_MULTIPLE (32) — must not crash
     cv::Mat image(24, 24, CV_8UC3);
@@ -199,7 +199,7 @@ TEST_F(XFeatTest, SmallImage)
 
 TEST_F(XFeatTest, RealImageDownscaled1600)
 {
-    nnmatch::XFeat xfeat(config);
+    n4m::XFeat xfeat(config);
 
     cv::Mat image = cv::imread(image_test_data_dir() + "/P2530253.JPG");
     if (image.empty())
@@ -227,7 +227,7 @@ TEST_F(XFeatTest, RealImageDownscaled1600)
 
 TEST_F(XFeatTest, Deterministic)
 {
-    nnmatch::XFeat xfeat(config);
+    n4m::XFeat xfeat(config);
 
     cv::Mat image(480, 640, CV_8UC3);
     cv::randu(image, cv::Scalar(0, 0, 0), cv::Scalar(255, 255, 255));

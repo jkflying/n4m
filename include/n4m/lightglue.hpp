@@ -4,9 +4,9 @@
 #include <string>
 #include <vector>
 
-#include <nnmatch/types.hpp>
+#include <n4m/types.hpp>
 
-namespace nnmatch
+namespace n4m
 {
 
 struct LightGlueConfig
@@ -33,4 +33,4 @@ class LightGlue
     std::unique_ptr<Impl> impl_;
 };
 
-} // namespace nnmatch
+} // namespace n4m

@@ -9,7 +9,7 @@
 #include <thread>
 #include <unistd.h>
 
-namespace nnmatch
+namespace n4m
 {
 namespace detail
 {
@@ -123,4 +123,4 @@ inline Ort::Session create_ort_session(Ort::Env &env, const char *model_path, Or
 }
 
 } // namespace detail
-} // namespace nnmatch
+} // namespace n4m

@@ -1,7 +1,3 @@
-add_library(nm_lightglue lightglue.cpp)
+add_library(n4m_lightglue lightglue.cpp)
 
-target_link_libraries(nm_lightglue PUBLIC nm_xfeat onnxruntime::onnxruntime spdlog::spdlog)
-
-if(NM_VULKAN)
-    target_link_libraries(nm_lightglue PUBLIC Vulkan::Vulkan)
-endif()
+target_link_libraries(n4m_lightglue PUBLIC n4m_xfeat onnxruntime::onnxruntime spdlog::spdlog)

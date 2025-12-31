@@ -1,12 +1,12 @@
 #pragma once
 
-#include <nnmatch/types.hpp>
+#include <n4m/types.hpp>
 
 #include <algorithm>
 #include <cmath>
 #include <vector>
 
-namespace nnmatch
+namespace n4m
 {
 namespace detail
 {
@@ -148,4 +148,4 @@ inline Descriptor sample_descriptor(const float *desc_data, int channels, int w,
 }
 
 } // namespace detail
-} // namespace nnmatch
+} // namespace n4m

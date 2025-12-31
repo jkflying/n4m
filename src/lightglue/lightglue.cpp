@@ -1,10 +1,10 @@
-#include <nnmatch/lightglue.hpp>
+#include <n4m/lightglue.hpp>
 
 #include "../ort_env.hpp"
 
 #include <spdlog/spdlog.h>
 
-namespace nnmatch
+namespace n4m
 {
 
 struct LightGlue::Impl
@@ -114,4 +114,4 @@ std::vector<Match> LightGlue::match(const FeatureResult &feats0, const FeatureRe
     return matches;
 }
 
-} // namespace nnmatch
+} // namespace n4m

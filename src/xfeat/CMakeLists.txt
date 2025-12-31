@@ -1,7 +1,3 @@
-add_library(nm_xfeat xfeat.cpp)
+add_library(n4m_xfeat xfeat.cpp)
 
-target_link_libraries(nm_xfeat PUBLIC opencv_core opencv_imgproc onnxruntime::onnxruntime spdlog::spdlog)
-
-if(NM_VULKAN)
-    target_link_libraries(nm_xfeat PUBLIC Vulkan::Vulkan)
-endif()
+target_link_libraries(n4m_xfeat PUBLIC opencv_core opencv_imgproc onnxruntime::onnxruntime spdlog::spdlog)

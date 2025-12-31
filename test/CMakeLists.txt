@@ -1,6 +1,6 @@
 find_package(GTest REQUIRED)
 
-add_executable(nm_tests
+add_executable(n4m_tests
     gtest_main.cpp
     test_types.cpp
     test_postprocess.cpp
@@ -8,19 +8,19 @@ add_executable(nm_tests
     test_lightglue.cpp
 )
 
-target_include_directories(nm_tests PRIVATE ${CMAKE_SOURCE_DIR}/src/xfeat)
+target_include_directories(n4m_tests PRIVATE ${CMAKE_SOURCE_DIR}/src/xfeat)
 
-target_link_libraries(nm_tests PRIVATE nm_xfeat nm_lightglue GTest::gtest opencv_imgcodecs)
+target_link_libraries(n4m_tests PRIVATE n4m_xfeat n4m_lightglue GTest::gtest opencv_imgcodecs)
 
-target_compile_definitions(nm_tests PRIVATE
+target_compile_definitions(n4m_tests PRIVATE
     IMAGE_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/image_test_data"
     REFERENCE_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/reference"
     MODELS_DIR="${CMAKE_SOURCE_DIR}/models")
 
 add_custom_target(test
                   USES_TERMINAL
-                  COMMAND ${CMAKE_BINARY_DIR}/test/nm_tests
-                  DEPENDS nm_tests)
+                  COMMAND ${CMAKE_BINARY_DIR}/test/n4m_tests
+                  DEPENDS n4m_tests)
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Coverage")
 
@@ -28,7 +28,7 @@ if ("${CMAKE_BUILD_TYPE}" STREQUAL "Coverage")
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         COMMAND ${CMAKE_SOURCE_DIR}/external/venv/bin/fastcov -z
         COMMAND rm -r coverage_html || echo "no existing coverage report"
-        DEPENDS nm_tests)
+        DEPENDS n4m_tests)
 
     add_dependencies(test clean_coverage)
 

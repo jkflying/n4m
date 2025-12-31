@@ -3,7 +3,7 @@
 #include <array>
 #include <vector>
 
-namespace nnmatch
+namespace n4m
 {
 
 static constexpr int XFEAT_DESCRIPTOR_DIM = 64;
@@ -29,4 +29,4 @@ struct Match
     float confidence;
 };
 
-} // namespace nnmatch
+} // namespace n4m

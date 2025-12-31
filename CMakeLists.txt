@@ -1,18 +1,16 @@
 cmake_minimum_required(VERSION 3.13)
-project(nnmatch)
+project(n4m)
 
 #============= OPTIONS ===============
-if(NOT DEFINED NM_TESTING)
-    option(NM_TESTING "" ON)
+if(NOT DEFINED N4M_TESTING)
+    option(N4M_TESTING "" ON)
 endif()
 
-if(NOT DEFINED NM_APP)
-    option(NM_APP "" ON)
+if(NOT DEFINED N4M_APP)
+    option(N4M_APP "" ON)
 endif()
 
-option(NM_CLANG_TIDY "Run clang-tidy during compilation" OFF)
-option(NM_VULKAN "Enable Vulkan GPU acceleration" OFF)
-
+option(N4M_CLANG_TIDY "Run clang-tidy during compilation" OFF)
 # =====================================
 
 find_program(CCACHE_PROGRAM ccache)
@@ -35,10 +33,6 @@ find_package(onnxruntime REQUIRED)
 
 find_package(spdlog REQUIRED)
 
-if(NM_VULKAN)
-    find_package(Vulkan REQUIRED)
-    add_compile_definitions(NM_VULKAN_ENABLED)
-endif()
 # =======================================
 
 if(MSVC)
@@ -63,7 +57,7 @@ endif()
 
 include_directories(include)
 
-if(NM_CLANG_TIDY)
+if(N4M_CLANG_TIDY)
     find_program(CLANG_TIDY_EXE
         NAMES clang-tidy-18 clang-tidy-17 clang-tidy-16 clang-tidy-15 clang-tidy-14 clang-tidy
         REQUIRED)
@@ -73,28 +67,28 @@ endif()
 
 add_subdirectory(src)
 
-message("-- NM_TESTING: ${NM_TESTING}")
-message("-- NM_APP: ${NM_APP}")
+message("-- N4M_TESTING: ${N4M_TESTING}")
+message("-- N4M_APP: ${N4M_APP}")
 
-if (NM_APP)
+if (N4M_APP)
     add_subdirectory(app)
 endif()
 
-if (NM_TESTING)
+if (N4M_TESTING)
     add_subdirectory(test)
 endif()
 
 # ======= INSTALL =======================
 include(GNUInstallDirs)
 
-install(TARGETS nm_xfeat nm_lightglue
+install(TARGETS n4m_xfeat n4m_lightglue
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
-install(DIRECTORY include/nnmatch
+install(DIRECTORY include/n4m
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-if (NM_APP)
+if (N4M_APP)
     install(TARGETS match_images
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
@@ -115,17 +109,17 @@ endforeach()
 install(FILES
     models/xfeat.onnx
     models/lightglue.onnx
-    DESTINATION ${CMAKE_INSTALL_DATADIR}/nnmatch/models)
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/n4m/models)
 
 # External data files (large models split by ONNX exporter)
 install(FILES
     models/xfeat.onnx.data
     models/lightglue.onnx.data
-    DESTINATION ${CMAKE_INSTALL_DATADIR}/nnmatch/models
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/n4m/models
     OPTIONAL)
 
 # ======= CPACK ========================
-set(CPACK_PACKAGE_NAME "nnmatch")
+set(CPACK_PACKAGE_NAME "n4m")
 set(CPACK_PACKAGE_VERSION "0.1.0")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "XFeat + LightGlue feature matching")
 set(CPACK_GENERATOR "TGZ")

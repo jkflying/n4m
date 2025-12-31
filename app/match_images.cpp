@@ -6,8 +6,8 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 
-#include <nnmatch/lightglue.hpp>
-#include <nnmatch/xfeat.hpp>
+#include <n4m/lightglue.hpp>
+#include <n4m/xfeat.hpp>
 
 static double ms_since(std::chrono::steady_clock::time_point t0)
 {
@@ -15,14 +15,14 @@ static double ms_since(std::chrono::steady_clock::time_point t0)
 }
 
 /// BFMatcher with Lowe's ratio test on XFeat descriptors.
-static std::vector<nnmatch::Match> bf_match(const nnmatch::FeatureResult &feats0, const nnmatch::FeatureResult &feats1,
-                                            float ratio_thresh = 0.8f)
+static std::vector<n4m::Match> bf_match(const n4m::FeatureResult &feats0, const n4m::FeatureResult &feats1,
+                                        float ratio_thresh = 0.8f)
 {
     const int n0 = static_cast<int>(feats0.keypoints.size());
     const int n1 = static_cast<int>(feats1.keypoints.size());
 
-    cv::Mat desc0(n0, nnmatch::XFEAT_DESCRIPTOR_DIM, CV_32F);
-    cv::Mat desc1(n1, nnmatch::XFEAT_DESCRIPTOR_DIM, CV_32F);
+    cv::Mat desc0(n0, n4m::XFEAT_DESCRIPTOR_DIM, CV_32F);
+    cv::Mat desc1(n1, n4m::XFEAT_DESCRIPTOR_DIM, CV_32F);
     for (int i = 0; i < n0; ++i)
         std::copy(feats0.keypoints[i].descriptor.begin(), feats0.keypoints[i].descriptor.end(), desc0.ptr<float>(i));
     for (int i = 0; i < n1; ++i)
@@ -32,7 +32,7 @@ static std::vector<nnmatch::Match> bf_match(const nnmatch::FeatureResult &feats0
     std::vector<std::vector<cv::DMatch>> knn_matches;
     bf->knnMatch(desc0, desc1, knn_matches, 2);
 
-    std::vector<nnmatch::Match> matches;
+    std::vector<n4m::Match> matches;
     for (const auto &knn : knn_matches)
     {
         if (knn.size() >= 2 && knn[0].distance < ratio_thresh * knn[1].distance)
@@ -43,8 +43,8 @@ static std::vector<nnmatch::Match> bf_match(const nnmatch::FeatureResult &feats0
     return matches;
 }
 
-static void draw_matches(cv::Mat &canvas, const cv::Mat &img1, const nnmatch::FeatureResult &feats1,
-                         const nnmatch::FeatureResult &feats2, const std::vector<nnmatch::Match> &matches, int x_offset)
+static void draw_matches(cv::Mat &canvas, const cv::Mat &img1, const n4m::FeatureResult &feats1,
+                         const n4m::FeatureResult &feats2, const std::vector<n4m::Match> &matches, int x_offset)
 {
     // All keypoints as small gray dots
     for (const auto &kp : feats1.keypoints)
@@ -97,10 +97,10 @@ int main(int argc, char **argv)
     resize_to_max(img2);
 
     // --- Feature extraction ---
-    nnmatch::XFeatConfig xfeat_cfg;
+    n4m::XFeatConfig xfeat_cfg;
     xfeat_cfg.model_path = model_dir + "/xfeat.onnx";
     xfeat_cfg.cell_size = 16;
-    nnmatch::XFeat xfeat(xfeat_cfg);
+    n4m::XFeat xfeat(xfeat_cfg);
 
     auto t0 = std::chrono::steady_clock::now();
     auto feats1 = xfeat.extract(img1);
@@ -116,9 +116,9 @@ int main(int argc, char **argv)
               << feats2.keypoints.size() << " keypoints\n";
 
     // --- LightGlue matching ---
-    nnmatch::LightGlueConfig lg_cfg;
+    n4m::LightGlueConfig lg_cfg;
     lg_cfg.model_path = model_dir + "/lightglue.onnx";
-    nnmatch::LightGlue lightglue(lg_cfg);
+    n4m::LightGlue lightglue(lg_cfg);
 
     t0 = std::chrono::steady_clock::now();
     auto lg_matches = lightglue.match(feats1, feats2);

@@ -5,7 +5,7 @@
 #include <cmath>
 #include <vector>
 
-using namespace nnmatch::detail;
+using namespace n4m::detail;
 
 TEST(NMS, SinglePeak)
 {
@@ -93,15 +93,15 @@ TEST(SampleDescriptor, IntegerCoords)
 {
     // Create a 2x2 descriptor map with 64 channels, CHW layout
     const int w = 2, h = 2;
-    std::vector<float> desc_map(nnmatch::XFEAT_DESCRIPTOR_DIM * h * w, 0.0f);
+    std::vector<float> desc_map(n4m::XFEAT_DESCRIPTOR_DIM * h * w, 0.0f);
 
     // Set channel 0 at position (0,0) to 3.0
     desc_map[0 * h * w + 0] = 3.0f;
 
-    auto desc = sample_descriptor(desc_map.data(), nnmatch::XFEAT_DESCRIPTOR_DIM, w, h, 0.0f, 0.0f);
+    auto desc = sample_descriptor(desc_map.data(), n4m::XFEAT_DESCRIPTOR_DIM, w, h, 0.0f, 0.0f);
     // After L2 normalize, channel 0 should be ~1.0 (only nonzero channel)
     EXPECT_NEAR(desc[0], 1.0f, 1e-6f);
-    for (int d = 1; d < nnmatch::XFEAT_DESCRIPTOR_DIM; ++d)
+    for (int d = 1; d < n4m::XFEAT_DESCRIPTOR_DIM; ++d)
     {
         EXPECT_NEAR(desc[d], 0.0f, 1e-6f);
     }
@@ -111,12 +111,12 @@ TEST(SampleDescriptor, BilinearInterpolation)
 {
     // 2x2 map, channel 0: top-left=4, rest=0
     const int w = 2, h = 2;
-    std::vector<float> desc_map(nnmatch::XFEAT_DESCRIPTOR_DIM * h * w, 0.0f);
+    std::vector<float> desc_map(n4m::XFEAT_DESCRIPTOR_DIM * h * w, 0.0f);
 
     desc_map[0 * h * w + 0] = 4.0f; // channel 0, (0,0)
 
     // Sample at (0.5, 0.0) => bilinear: 4*(1-0.5)*(1-0) = 2.0
-    auto desc = sample_descriptor(desc_map.data(), nnmatch::XFEAT_DESCRIPTOR_DIM, w, h, 0.5f, 0.0f);
+    auto desc = sample_descriptor(desc_map.data(), n4m::XFEAT_DESCRIPTOR_DIM, w, h, 0.5f, 0.0f);
     // After L2 norm, still 1.0 since only one channel nonzero
     EXPECT_NEAR(desc[0], 1.0f, 1e-6f);
 }
@@ -159,15 +159,15 @@ TEST(SampleDescriptor, L2Normalized)
 {
     // Set two channels to nonzero to verify normalization
     const int w = 1, h = 1;
-    std::vector<float> desc_map(nnmatch::XFEAT_DESCRIPTOR_DIM * h * w, 0.0f);
+    std::vector<float> desc_map(n4m::XFEAT_DESCRIPTOR_DIM * h * w, 0.0f);
 
     desc_map[0] = 3.0f; // channel 0
     desc_map[1] = 4.0f; // channel 1
 
-    auto desc = sample_descriptor(desc_map.data(), nnmatch::XFEAT_DESCRIPTOR_DIM, w, h, 0.0f, 0.0f);
+    auto desc = sample_descriptor(desc_map.data(), n4m::XFEAT_DESCRIPTOR_DIM, w, h, 0.0f, 0.0f);
 
     float norm = 0.0f;
-    for (int d = 0; d < nnmatch::XFEAT_DESCRIPTOR_DIM; ++d)
+    for (int d = 0; d < n4m::XFEAT_DESCRIPTOR_DIM; ++d)
     {
         norm += desc[d] * desc[d];
     }

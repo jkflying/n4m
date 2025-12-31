@@ -3,8 +3,8 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 
-#include <nnmatch/lightglue.hpp>
-#include <nnmatch/xfeat.hpp>
+#include <n4m/lightglue.hpp>
+#include <n4m/xfeat.hpp>
 
 #include <chrono>
 #include <fstream>
@@ -41,7 +41,7 @@ class LightGlueTest : public ::testing::Test
         lg_config.confidence_threshold = 0.0f;
     }
 
-    nnmatch::LightGlueConfig lg_config;
+    n4m::LightGlueConfig lg_config;
 };
 
 class LightGlueWithXFeatTest : public LightGlueTest
@@ -60,15 +60,15 @@ class LightGlueWithXFeatTest : public LightGlueTest
         xfeat_config.max_keypoints = 4096;
     }
 
-    nnmatch::XFeatConfig xfeat_config;
+    n4m::XFeatConfig xfeat_config;
 };
 
 TEST_F(LightGlueTest, MatchSyntheticFeatures)
 {
-    nnmatch::LightGlue lg(lg_config);
+    n4m::LightGlue lg(lg_config);
 
     // Create identical features — should produce identity matches
-    nnmatch::FeatureResult feats0, feats1;
+    n4m::FeatureResult feats0, feats1;
     feats0.image_width = 640;
     feats0.image_height = 480;
     feats1.image_width = 640;
@@ -76,12 +76,12 @@ TEST_F(LightGlueTest, MatchSyntheticFeatures)
 
     for (int i = 0; i < 50; ++i)
     {
-        nnmatch::Keypoint kp;
+        n4m::Keypoint kp;
         kp.x = static_cast<float>(i * 12);
         kp.y = static_cast<float>(i * 9);
         kp.score = 1.0f;
         kp.descriptor.fill(0.0f);
-        kp.descriptor[i % nnmatch::XFEAT_DESCRIPTOR_DIM] = 1.0f;
+        kp.descriptor[i % n4m::XFEAT_DESCRIPTOR_DIM] = 1.0f;
         feats0.keypoints.push_back(kp);
         feats1.keypoints.push_back(kp);
     }
@@ -99,8 +99,8 @@ TEST_F(LightGlueTest, MatchSyntheticFeatures)
 
 TEST_F(LightGlueWithXFeatTest, MatchRealImages)
 {
-    nnmatch::XFeat xfeat(xfeat_config);
-    nnmatch::LightGlue lg(lg_config);
+    n4m::XFeat xfeat(xfeat_config);
+    n4m::LightGlue lg(lg_config);
 
     cv::Mat img0 = cv::imread(image_test_data_dir() + "/P2530253.JPG");
     cv::Mat img1 = cv::imread(image_test_data_dir() + "/P2540254.JPG");
@@ -134,8 +134,8 @@ TEST_F(LightGlueWithXFeatTest, MatchRealImages)
 
 TEST_F(LightGlueWithXFeatTest, MatchRealImagesDownscaled1600)
 {
-    nnmatch::XFeat xfeat(xfeat_config);
-    nnmatch::LightGlue lg(lg_config);
+    n4m::XFeat xfeat(xfeat_config);
+    n4m::LightGlue lg(lg_config);
 
     cv::Mat img0 = cv::imread(image_test_data_dir() + "/P2530253.JPG");
     cv::Mat img1 = cv::imread(image_test_data_dir() + "/P2540254.JPG");
@@ -167,12 +167,12 @@ TEST_F(LightGlueWithXFeatTest, MatchRealImagesDownscaled1600)
 
 TEST(LightGlueBasic, EmptyInput)
 {
-    nnmatch::FeatureResult empty;
+    n4m::FeatureResult empty;
     EXPECT_TRUE(empty.keypoints.empty());
     EXPECT_EQ(empty.image_width, 0);
     EXPECT_EQ(empty.image_height, 0);
 
-    nnmatch::Match m{0, 1, 0.95f};
+    n4m::Match m{0, 1, 0.95f};
     EXPECT_EQ(m.idx0, 0);
     EXPECT_EQ(m.idx1, 1);
     EXPECT_FLOAT_EQ(m.confidence, 0.95f);
@@ -180,9 +180,9 @@ TEST(LightGlueBasic, EmptyInput)
 
 TEST_F(LightGlueTest, EmptyFeatures)
 {
-    nnmatch::LightGlue lg(lg_config);
+    n4m::LightGlue lg(lg_config);
 
-    nnmatch::FeatureResult feats0, feats1;
+    n4m::FeatureResult feats0, feats1;
     feats0.image_width = 640;
     feats0.image_height = 480;
     feats1.image_width = 640;
@@ -195,9 +195,9 @@ TEST_F(LightGlueTest, EmptyFeatures)
 TEST_F(LightGlueTest, ConfidenceThreshold)
 {
     lg_config.confidence_threshold = 0.99f;
-    nnmatch::LightGlue lg(lg_config);
+    n4m::LightGlue lg(lg_config);
 
-    nnmatch::FeatureResult feats0, feats1;
+    n4m::FeatureResult feats0, feats1;
     feats0.image_width = 640;
     feats0.image_height = 480;
     feats1.image_width = 640;
@@ -205,12 +205,12 @@ TEST_F(LightGlueTest, ConfidenceThreshold)
 
     for (int i = 0; i < 50; ++i)
     {
-        nnmatch::Keypoint kp;
+        n4m::Keypoint kp;
         kp.x = static_cast<float>(i * 12);
         kp.y = static_cast<float>(i * 9);
         kp.score = 1.0f;
         kp.descriptor.fill(0.0f);
-        kp.descriptor[i % nnmatch::XFEAT_DESCRIPTOR_DIM] = 1.0f;
+        kp.descriptor[i % n4m::XFEAT_DESCRIPTOR_DIM] = 1.0f;
         feats0.keypoints.push_back(kp);
         feats1.keypoints.push_back(kp);
     }
@@ -218,7 +218,7 @@ TEST_F(LightGlueTest, ConfidenceThreshold)
     auto matches_strict = lg.match(feats0, feats1);
 
     lg_config.confidence_threshold = 0.0f;
-    nnmatch::LightGlue lg_loose(lg_config);
+    n4m::LightGlue lg_loose(lg_config);
     auto matches_loose = lg_loose.match(feats0, feats1);
 
     EXPECT_LE(matches_strict.size(), matches_loose.size()) << "Higher threshold should produce fewer or equal matches";
@@ -226,7 +226,7 @@ TEST_F(LightGlueTest, ConfidenceThreshold)
 
 TEST_F(LightGlueWithXFeatTest, FeatureResultHasImageSize)
 {
-    nnmatch::XFeat xfeat(xfeat_config);
+    n4m::XFeat xfeat(xfeat_config);
 
     cv::Mat image(480, 640, CV_8UC3);
     cv::randu(image, cv::Scalar(0, 0, 0), cv::Scalar(255, 255, 255));
@@ -238,7 +238,7 @@ TEST_F(LightGlueWithXFeatTest, FeatureResultHasImageSize)
 
 TEST_F(LightGlueWithXFeatTest, FeatureResultHasImageSizeRealImage)
 {
-    nnmatch::XFeat xfeat(xfeat_config);
+    n4m::XFeat xfeat(xfeat_config);
 
     cv::Mat image = cv::imread(image_test_data_dir() + "/P2530253.JPG");
     if (image.empty())
