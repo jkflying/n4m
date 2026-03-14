@@ -8,12 +8,16 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
+    container: ubuntu:25.10
     steps:
+    - name: install git
+      run: apt-get update && apt-get install -y git
     - uses: actions/checkout@v2
       with:
         submodules: true
     - name: ccache
       uses: hendrikmuhs/ccache-action@v1.2
     - name: build and test
+      shell: bash
       run: tools/ci_local.sh
