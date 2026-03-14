@@ -166,10 +166,10 @@ FeatureResult XFeat::extract(const cv::Mat &image) const
     if (impl_->config.cell_size > 0)
     {
         selected = best_per_cell(candidates, hm_w, hm_h, impl_->config.cell_size);
+        std::sort(selected.begin(), selected.end(),
+                  [](const detail::RawKeypoint &a, const detail::RawKeypoint &b) { return a.score > b.score; });
         if (static_cast<int>(selected.size()) > impl_->config.max_keypoints)
         {
-            std::sort(selected.begin(), selected.end(),
-                      [](const detail::RawKeypoint &a, const detail::RawKeypoint &b) { return a.score > b.score; });
             selected.resize(impl_->config.max_keypoints);
         }
     }

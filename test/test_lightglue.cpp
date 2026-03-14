@@ -224,6 +224,37 @@ TEST_F(LightGlueTest, ConfidenceThreshold)
     EXPECT_LE(matches_strict.size(), matches_loose.size()) << "Higher threshold should produce fewer or equal matches";
 }
 
+TEST_F(LightGlueTest, MoveConstruction)
+{
+    n4m::LightGlue lg1(lg_config);
+    n4m::LightGlue lg2(std::move(lg1));
+
+    n4m::FeatureResult feats0, feats1;
+    feats0.image_width = 640;
+    feats0.image_height = 480;
+    feats1.image_width = 640;
+    feats1.image_height = 480;
+
+    auto matches = lg2.match(feats0, feats1);
+    EXPECT_TRUE(matches.empty());
+}
+
+TEST_F(LightGlueTest, MoveAssignment)
+{
+    n4m::LightGlue lg1(lg_config);
+    n4m::LightGlue lg2(lg_config);
+    lg2 = std::move(lg1);
+
+    n4m::FeatureResult feats0, feats1;
+    feats0.image_width = 640;
+    feats0.image_height = 480;
+    feats1.image_width = 640;
+    feats1.image_height = 480;
+
+    auto matches = lg2.match(feats0, feats1);
+    EXPECT_TRUE(matches.empty());
+}
+
 TEST_F(LightGlueWithXFeatTest, FeatureResultHasImageSize)
 {
     n4m::XFeat xfeat(xfeat_config);

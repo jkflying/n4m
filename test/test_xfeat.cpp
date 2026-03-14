@@ -225,6 +225,60 @@ TEST_F(XFeatTest, RealImageDownscaled1600)
     EXPECT_GT(result.keypoints.size(), 500u);
 }
 
+TEST_F(XFeatTest, CellSizeFiltering)
+{
+    config.cell_size = 16;
+    config.max_keypoints = 4096;
+    n4m::XFeat xfeat(config);
+
+    cv::Mat image(480, 640, CV_8UC3);
+    cv::randu(image, cv::Scalar(0, 0, 0), cv::Scalar(255, 255, 255));
+    cv::rectangle(image, cv::Point(100, 100), cv::Point(300, 300), cv::Scalar(255, 255, 255), 2);
+
+    auto result = xfeat.extract(image);
+    EXPECT_GT(result.keypoints.size(), 0u);
+    EXPECT_LE(result.keypoints.size(), 4096u);
+    validate_result(result, image);
+}
+
+TEST_F(XFeatTest, CellSizeWithMaxKeypoints)
+{
+    config.cell_size = 16;
+    config.max_keypoints = 10;
+    n4m::XFeat xfeat(config);
+
+    cv::Mat image(480, 640, CV_8UC3);
+    cv::randu(image, cv::Scalar(0, 0, 0), cv::Scalar(255, 255, 255));
+
+    auto result = xfeat.extract(image);
+    EXPECT_LE(result.keypoints.size(), 10u);
+}
+
+TEST_F(XFeatTest, MoveConstruction)
+{
+    n4m::XFeat xfeat1(config);
+    n4m::XFeat xfeat2(std::move(xfeat1));
+
+    cv::Mat image(480, 640, CV_8UC3);
+    cv::randu(image, cv::Scalar(0, 0, 0), cv::Scalar(255, 255, 255));
+
+    auto result = xfeat2.extract(image);
+    EXPECT_GT(result.keypoints.size(), 0u);
+}
+
+TEST_F(XFeatTest, MoveAssignment)
+{
+    n4m::XFeat xfeat1(config);
+    n4m::XFeat xfeat2(config);
+    xfeat2 = std::move(xfeat1);
+
+    cv::Mat image(480, 640, CV_8UC3);
+    cv::randu(image, cv::Scalar(0, 0, 0), cv::Scalar(255, 255, 255));
+
+    auto result = xfeat2.extract(image);
+    EXPECT_GT(result.keypoints.size(), 0u);
+}
+
 TEST_F(XFeatTest, Deterministic)
 {
     n4m::XFeat xfeat(config);
