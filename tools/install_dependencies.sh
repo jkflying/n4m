@@ -2,7 +2,7 @@
 
 set -ex
 sudo apt-get update || (apt-get update && apt-get install -y sudo)
-sudo apt-get install -y cmake ccache ninja-build libopencv-dev libgtest-dev libspdlog-dev clang-format-14 clang-tidy-18 clang-18 build-essential git lcov libonnxruntime-dev python3-venv
+sudo apt-get install -y cmake ccache ninja-build libopencv-dev libgtest-dev libspdlog-dev clang-format-14 clang-tidy-18 clang-18 build-essential git lcov libonnxruntime-dev python3-venv curl
 
 cd "$(dirname "$0")/.."
 
