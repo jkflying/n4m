@@ -157,6 +157,13 @@ def main():
         opset_version=17,
         do_constant_folding=True,
     )
+    # Re-save with weights inlined (no .onnx.data sidecar)
+    import onnx
+    model_proto = onnx.load(onnx_path, load_external_data=True)
+    onnx.save(model_proto, onnx_path, save_as_external_data=False)
+    data_path = onnx_path + '.data'
+    if os.path.exists(data_path):
+        os.remove(data_path)
     print(f"Exported ONNX to {onnx_path}")
 
     # Verify ONNX output matches PyTorch

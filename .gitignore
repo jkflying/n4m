@@ -3,8 +3,6 @@ build_*/
 external/venv/
 external/venv_models/
 external/accelerated_features/
-models/*.onnx
-models/*.onnx.data
 models/*.pt
 test/test_data/reference/
 .cache/

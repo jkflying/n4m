@@ -111,13 +111,6 @@ install(FILES
     models/lightglue.onnx
     DESTINATION ${CMAKE_INSTALL_DATADIR}/n4m/models)
 
-# External data files (large models split by ONNX exporter)
-install(FILES
-    models/xfeat.onnx.data
-    models/lightglue.onnx.data
-    DESTINATION ${CMAKE_INSTALL_DATADIR}/n4m/models
-    OPTIONAL)
-
 # ======= CPACK ========================
 set(CPACK_PACKAGE_NAME "n4m")
 set(CPACK_PACKAGE_VERSION "0.1.0")
