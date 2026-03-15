@@ -122,12 +122,13 @@ def main():
 
     # Dummy inputs for tracing
     M, N = 512, 512
-    kpts0 = torch.rand(1, M, 2) * 640
-    kpts1 = torch.rand(1, N, 2) * 640
-    desc0 = torch.randn(1, M, 64)
-    desc1 = torch.randn(1, N, 64)
-    image_size0 = torch.tensor([[640, 480]], dtype=torch.int64)  # (width, height)
-    image_size1 = torch.tensor([[640, 480]], dtype=torch.int64)  # (width, height)
+    B = 2
+    kpts0 = torch.rand(B, M, 2) * 640
+    kpts1 = torch.rand(B, N, 2) * 640
+    desc0 = torch.randn(B, M, 64)
+    desc1 = torch.randn(B, N, 64)
+    image_size0 = torch.tensor([[640, 480]] * B, dtype=torch.int64)  # (width, height)
+    image_size1 = torch.tensor([[640, 480]] * B, dtype=torch.int64)  # (width, height)
 
     # Verify PyTorch output
     with torch.no_grad():
@@ -147,12 +148,14 @@ def main():
         input_names=['kpts0', 'kpts1', 'desc0', 'desc1', 'image_size0', 'image_size1'],
         output_names=['matches0', 'scores0'],
         dynamic_axes={
-            'kpts0': {1: 'num_kpts0'},
-            'kpts1': {1: 'num_kpts1'},
-            'desc0': {1: 'num_kpts0'},
-            'desc1': {1: 'num_kpts1'},
-            'matches0': {1: 'num_kpts0'},
-            'scores0': {1: 'num_kpts0'},
+            'kpts0': {0: 'batch', 1: 'num_kpts0'},
+            'kpts1': {0: 'batch', 1: 'num_kpts1'},
+            'desc0': {0: 'batch', 1: 'num_kpts0'},
+            'desc1': {0: 'batch', 1: 'num_kpts1'},
+            'image_size0': {0: 'batch'},
+            'image_size1': {0: 'batch'},
+            'matches0': {0: 'batch', 1: 'num_kpts0'},
+            'scores0': {0: 'batch', 1: 'num_kpts0'},
         },
         opset_version=17,
         do_constant_folding=True,
@@ -181,8 +184,8 @@ def main():
     }
     matches0_onnx, scores0_onnx = sess.run(None, onnx_inputs)
 
-    match_diff = np.abs(matches0_pt.numpy().astype(np.int64) - matches0_onnx.astype(np.int64))
-    score_diff = np.abs(scores0_pt.numpy() - scores0_onnx)
+    match_diff = np.abs(matches0_pt.numpy().astype(np.int64) - matches0_onnx.astype(np.int64)).flatten()
+    score_diff = np.abs(scores0_pt.numpy() - scores0_onnx).flatten()
     print(f"\nVerification:")
     print(f"  matches0 max diff: {match_diff.max()}")
     print(f"  scores0 mean abs diff: {score_diff.mean():.6f}")

@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <opencv2/core.hpp>
 
@@ -18,6 +19,8 @@ struct XFeatConfig
     /// Best keypoint per cell is kept, then capped to max_keypoints.
     /// 16 matches opencalibration's NMS density (8px radius, ~70% fill → ~same count at 1600px).
     int cell_size = 0;
+    /// ONNX Runtime intra-op thread count (0 = ORT default, 1 = single-threaded).
+    int intra_op_threads = 1;
 };
 
 class XFeat
@@ -32,6 +35,7 @@ class XFeat
     XFeat &operator=(XFeat &&) noexcept;
 
     FeatureResult extract(const cv::Mat &image) const;
+    std::vector<FeatureResult> extract_batch(const std::vector<cv::Mat> &images) const;
 
   private:
     struct Impl;

@@ -40,7 +40,7 @@ def main():
     model.eval()
 
     H, W = 480, 640
-    dummy = torch.randn(1, 3, H, W)
+    dummy = torch.randn(2, 3, H, W)
 
     onnx_path = os.path.join(models_dir, 'xfeat.onnx')
     torch.onnx.export(
@@ -48,10 +48,10 @@ def main():
         input_names=['input'],
         output_names=['descriptors', 'keypoint_logits', 'reliability'],
         dynamic_axes={
-            'input': {2: 'height', 3: 'width'},
-            'descriptors': {2: 'h8', 3: 'w8'},
-            'keypoint_logits': {2: 'h8', 3: 'w8'},
-            'reliability': {2: 'h8', 3: 'w8'},
+            'input': {0: 'batch', 2: 'height', 3: 'width'},
+            'descriptors': {0: 'batch', 2: 'h8', 3: 'w8'},
+            'keypoint_logits': {0: 'batch', 2: 'h8', 3: 'w8'},
+            'reliability': {0: 'batch', 2: 'h8', 3: 'w8'},
         },
         opset_version=17,
         do_constant_folding=True,
