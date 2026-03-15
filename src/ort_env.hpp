@@ -1,10 +1,13 @@
 #pragma once
 
+#include <n4m/backend.hpp>
+
 #include <onnxruntime_cxx_api.h>
 #include <spdlog/spdlog.h>
 
 #include <cstdio>
 #include <fcntl.h>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <unistd.h>
@@ -115,6 +118,36 @@ class StderrToSpdlog
     int saved_fd_ = -1;
     std::thread reader_;
 };
+
+inline void configure_backend(Ort::SessionOptions &opts, Backend backend)
+{
+    if (backend == Backend::cpu)
+    {
+        return;
+    }
+
+    const char *provider = backend_provider_name(backend);
+
+    // Verify the provider is available
+    auto providers = Ort::GetAvailableProviders();
+    bool found = false;
+    for (const auto &p : providers)
+    {
+        if (p == provider)
+        {
+            found = true;
+            break;
+        }
+    }
+    if (!found)
+    {
+        throw std::runtime_error(std::string("Backend '") + to_string(backend) +
+                                 "' is not available in this ONNX Runtime build (provider: " + provider + ")");
+    }
+
+    opts.AppendExecutionProvider(provider, {});
+    spdlog::info("Using execution provider: {}", provider);
+}
 
 inline Ort::Session create_ort_session(Ort::Env &env, const char *model_path, Ort::SessionOptions &opts)
 {

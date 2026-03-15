@@ -18,10 +18,11 @@ struct LightGlue::Impl
         Ort::SessionOptions opts;
         opts.SetIntraOpNumThreads(config.intra_op_threads);
         opts.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
+        detail::configure_backend(opts, config.backend);
 
         session = detail::create_ort_session(env, config.model_path.c_str(), opts);
-        spdlog::info("LightGlue: loaded model (confidence threshold: {}, {} threads)", config.confidence_threshold,
-                     config.intra_op_threads);
+        spdlog::info("LightGlue: loaded model (confidence threshold: {}, {} threads, backend: {})",
+                     config.confidence_threshold, config.intra_op_threads, to_string(config.backend));
     }
 
     /// Extract matches from raw outputs for a single pair within a batch.

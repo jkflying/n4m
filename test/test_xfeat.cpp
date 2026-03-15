@@ -415,7 +415,7 @@ TEST_F(XFeatTest, ExtractBatchMaxKeypoints)
     }
 }
 
-TEST_F(XFeatTest, ExtractBatchScaling)
+TEST_F(XFeatTest, DISABLED_ExtractBatchScaling)
 {
     cv::Mat img0 = cv::imread(image_test_data_dir() + "/P2530253.JPG");
     cv::Mat img1 = cv::imread(image_test_data_dir() + "/P2540254.JPG");

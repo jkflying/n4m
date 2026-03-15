@@ -57,10 +57,11 @@ struct XFeat::Impl
         Ort::SessionOptions opts;
         opts.SetIntraOpNumThreads(config.intra_op_threads);
         opts.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
+        detail::configure_backend(opts, config.backend);
 
         session = detail::create_ort_session(env, config.model_path.c_str(), opts);
-        spdlog::info("XFeat: loaded model from {} ({} max keypoints, {} threads)", config.model_path,
-                     config.max_keypoints, config.intra_op_threads);
+        spdlog::info("XFeat: loaded model from {} ({} max keypoints, {} threads, backend: {})", config.model_path,
+                     config.max_keypoints, config.intra_op_threads, to_string(config.backend));
     }
 
     /// Convert image to RGB float32, resize to target dims, and write NCHW into dest buffer.

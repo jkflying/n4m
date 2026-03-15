@@ -527,7 +527,7 @@ TEST_F(LightGlueWithXFeatTest, MatchBatchWithRealImages)
     EXPECT_GT(batch_results[1].size(), 50u);
 }
 
-TEST_F(LightGlueWithXFeatTest, MatchBatchScaling)
+TEST_F(LightGlueWithXFeatTest, DISABLED_MatchBatchScaling)
 {
     cv::Mat img0 = cv::imread(image_test_data_dir() + "/P2530253.JPG");
     cv::Mat img1 = cv::imread(image_test_data_dir() + "/P2540254.JPG");

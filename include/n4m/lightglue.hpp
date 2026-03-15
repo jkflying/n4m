@@ -16,6 +16,8 @@ struct LightGlueConfig
     float confidence_threshold = 0.0f;
     /// ONNX Runtime intra-op thread count (0 = ORT default, 1 = single-threaded).
     int intra_op_threads = 1;
+    /// ONNX Runtime execution provider (default: cpu).
+    Backend backend = Backend::cpu;
 };
 
 class LightGlue
