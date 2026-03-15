@@ -98,7 +98,7 @@ set(_required_models
     models/lightglue.onnx)
 
 foreach(_model ${_required_models})
-    if(NOT EXISTS "${CMAKE_SOURCE_DIR}/${_model}")
+    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${_model}")
         message(FATAL_ERROR "Required model not found: ${_model}\n"
             "Run the export scripts first:\n"
             "  python tools/export/1_export_xfeat_onnx.py\n"
